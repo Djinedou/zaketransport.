@@ -6,6 +6,7 @@ import { AmenitiesSection } from "@/components/amenities-section"
 import { RulesSection } from "@/components/rules-section"
 import { TestimonialsSection } from "@/components/testimonials-section"
 import { Footer } from "@/components/footer"
+import { InstallPrompt } from "@/components/install-prompt"
 
 export default function HomePage() {
   return (
@@ -20,6 +21,7 @@ export default function HomePage() {
         <TestimonialsSection />
       </main>
       <Footer />
+      <InstallPrompt />
     </div>
   )
 }

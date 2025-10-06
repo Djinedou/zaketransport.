@@ -1,0 +1,27 @@
+{
+  "name": "Zake Transport",
+  "short_name": "Zake",
+  "description": "Voyage en Confort et Sécurité - Réservez vos billets de bus en ligne",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0EA5E9",
+  "theme_color": "#0EA5E9",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/zake-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/zake-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["travel", "transportation"],
+  "lang": "fr-FR",
+  "dir": "ltr"
+}
