@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -18,51 +18,43 @@ import {
 } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Plus, Edit, Trash2, Save, Loader2 } from "lucide-react"
-import { saveRoute, deleteRoute } from "@/lib/admin-actions"
+import { saveRoute, deleteRoute, getRoutes } from "@/lib/admin-actions"
 import { toast } from "sonner"
 
 export function RoutesManagement() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingRoute, setEditingRoute] = useState<any>(null)
   const [isSaving, setIsSaving] = useState(false)
-  const [routes, setRoutes] = useState([
-    {
-      id: "1",
-      from: "Cotonou",
-      to: "Natitingou",
-      price: 7000,
-      duration: "8h30",
-      active: true,
-      departures: ["07:00", "20:00"],
-    },
-    {
-      id: "2",
-      from: "Natitingou",
-      to: "Cotonou",
-      price: 7000,
-      duration: "8h30",
-      active: true,
-      departures: ["07:00", "20:00"],
-    },
-    {
-      id: "3",
-      from: "Cotonou",
-      to: "Djougou",
-      price: 6000,
-      duration: "6h00",
-      active: true,
-      departures: ["07:00", "20:00"],
-    },
-    {
-      id: "4",
-      from: "Cotonou",
-      to: "Aledjo",
-      price: 6000,
-      duration: "6h00",
-      active: true,
-      departures: ["07:00", "20:00"],
-    },
-  ])
+  const [routes, setRoutes] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    loadRoutes()
+  }, [])
+
+  const loadRoutes = async () => {
+    setIsLoading(true)
+    try {
+      const result = await getRoutes()
+      if (result.success) {
+        const formattedRoutes = result.routes.map((r: any) => ({
+          id: r.id.toString(),
+          from: r.from,
+          to: r.to,
+          price: Number(r.price),
+          duration: r.duration,
+          active: true,
+          departures: ["07:00", "20:00"],
+        }))
+        setRoutes(formattedRoutes)
+      }
+    } catch (error) {
+      console.error("[v0] Load routes error:", error)
+      toast.error("Erreur lors du chargement des itinéraires")
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const handleEdit = (route: any) => {
     setEditingRoute(route)
@@ -93,14 +85,7 @@ export function RoutesManagement() {
       const result = await saveRoute(routeData)
       if (result.success) {
         toast.success(result.message)
-
-        // Update local state
-        if (editingRoute) {
-          setRoutes(routes.map((r) => (r.id === editingRoute.id ? { ...routeData, id: r.id } : r)))
-        } else {
-          setRoutes([...routes, { ...routeData, id: result.route.id }])
-        }
-
+        await loadRoutes()
         setIsDialogOpen(false)
       }
     } catch (error) {
@@ -117,7 +102,7 @@ export function RoutesManagement() {
       const result = await deleteRoute(routeId)
       if (result.success) {
         toast.success(result.message)
-        setRoutes(routes.filter((r) => r.id !== routeId))
+        await loadRoutes()
       }
     } catch (error) {
       toast.error("Erreur lors de la suppression")
@@ -145,55 +130,63 @@ export function RoutesManagement() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Départ</TableHead>
-                  <TableHead>Arrivée</TableHead>
-                  <TableHead>Prix</TableHead>
-                  <TableHead>Durée</TableHead>
-                  <TableHead>Horaires</TableHead>
-                  <TableHead>Statut</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {routes.map((route) => (
-                  <TableRow key={route.id}>
-                    <TableCell className="font-medium">{route.from}</TableCell>
-                    <TableCell className="font-medium">{route.to}</TableCell>
-                    <TableCell>{route.price.toLocaleString()} FCFA</TableCell>
-                    <TableCell>{route.duration}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        {route.departures.map((time) => (
-                          <Badge key={time} variant="outline">
-                            {time}
-                          </Badge>
-                        ))}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={route.active ? "default" : "secondary"}>
-                        {route.active ? "Actif" : "Inactif"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="sm" onClick={() => handleEdit(route)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleDelete(route.id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
+          {isLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : routes.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">Aucun itinéraire trouvé. Créez-en un nouveau.</div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Départ</TableHead>
+                    <TableHead>Arrivée</TableHead>
+                    <TableHead>Prix</TableHead>
+                    <TableHead>Durée</TableHead>
+                    <TableHead>Horaires</TableHead>
+                    <TableHead>Statut</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {routes.map((route) => (
+                    <TableRow key={route.id}>
+                      <TableCell className="font-medium">{route.from}</TableCell>
+                      <TableCell className="font-medium">{route.to}</TableCell>
+                      <TableCell>{route.price.toLocaleString()} FCFA</TableCell>
+                      <TableCell>{route.duration}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          {route.departures.map((time) => (
+                            <Badge key={time} variant="outline">
+                              {time}
+                            </Badge>
+                          ))}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={route.active ? "default" : "secondary"}>
+                          {route.active ? "Actif" : "Inactif"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button variant="ghost" size="sm" onClick={() => handleEdit(route)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => handleDelete(route.id)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
 

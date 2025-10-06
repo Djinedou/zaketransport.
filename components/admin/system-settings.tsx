@@ -1,17 +1,18 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Save, Loader2 } from "lucide-react"
-import { saveSystemSettings } from "@/lib/admin-actions"
+import { saveSystemSettings, getSystemSettings } from "@/lib/admin-actions"
 import { toast } from "sonner"
 
 export function SystemSettings() {
   const [isLoading, setIsLoading] = useState(false)
+  const [isFetching, setIsFetching] = useState(true)
   const [settings, setSettings] = useState({
     companyName: "ZAKE TRANSPORT",
     companySlogan: "Voyage en Confort et Sécurité",
@@ -22,6 +23,25 @@ export function SystemSettings() {
     packageBaseFee: "2000",
     packageFeePerKg: "500",
   })
+
+  useEffect(() => {
+    loadSettings()
+  }, [])
+
+  const loadSettings = async () => {
+    setIsFetching(true)
+    try {
+      const result = await getSystemSettings()
+      if (result.success && result.settings) {
+        setSettings(result.settings)
+      }
+    } catch (error) {
+      console.error("[v0] Load settings error:", error)
+      toast.error("Erreur lors du chargement des paramètres")
+    } finally {
+      setIsFetching(false)
+    }
+  }
 
   const handleSave = async () => {
     setIsLoading(true)
@@ -35,6 +55,14 @@ export function SystemSettings() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  if (isFetching) {
+    return (
+      <div className="flex justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
   }
 
   return (

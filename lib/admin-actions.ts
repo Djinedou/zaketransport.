@@ -59,6 +59,42 @@ export async function saveSystemSettings(settings: {
   }
 }
 
+export async function getSystemSettings() {
+  await verifyAdminSession()
+
+  try {
+    const settings = await query(`SELECT setting_key, setting_value FROM system_settings`)
+
+    const settingsObj: any = {
+      companyName: "ZAKE TRANSPORT",
+      companySlogan: "Voyage en Confort et Sécurité",
+      contactPhone: "229-01568806636",
+      contactEmail: "contact@zaketransport.bj",
+      bookingAdvanceDays: "30",
+      defaultSeatsPerBus: "50",
+      packageBaseFee: "2000",
+      packageFeePerKg: "500",
+    }
+
+    settings.forEach((row: any) => {
+      const key = row.setting_key
+      if (key === "company_name") settingsObj.companyName = row.setting_value
+      if (key === "company_slogan") settingsObj.companySlogan = row.setting_value
+      if (key === "contact_phone") settingsObj.contactPhone = row.setting_value
+      if (key === "contact_email") settingsObj.contactEmail = row.setting_value
+      if (key === "booking_advance_days") settingsObj.bookingAdvanceDays = row.setting_value
+      if (key === "default_seats_per_bus") settingsObj.defaultSeatsPerBus = row.setting_value
+      if (key === "package_base_fee") settingsObj.packageBaseFee = row.setting_value
+      if (key === "package_fee_per_kg") settingsObj.packageFeePerKg = row.setting_value
+    })
+
+    return { success: true, settings: settingsObj }
+  } catch (error) {
+    console.error("[v0] Get settings error:", error)
+    return { success: false, settings: null }
+  }
+}
+
 // Policy Actions
 export async function savePolicy(policy: {
   id?: string
@@ -97,6 +133,22 @@ export async function savePolicy(policy: {
   } catch (error) {
     console.error("[v0] Save policy error:", error)
     return { success: false, message: "Erreur lors de l'enregistrement" }
+  }
+}
+
+export async function getPolicies() {
+  await verifyAdminSession()
+
+  try {
+    const policies = await query(
+      `SELECT id, title, content, category, is_active as active, created_at
+       FROM policies
+       ORDER BY created_at DESC`,
+    )
+    return { success: true, policies }
+  } catch (error) {
+    console.error("[v0] Get policies error:", error)
+    return { success: false, policies: [] }
   }
 }
 
@@ -180,6 +232,22 @@ export async function saveRoute(route: {
   }
 }
 
+export async function getRoutes() {
+  await verifyAdminSession()
+
+  try {
+    const routes = await query(
+      `SELECT id, origin as from, destination as to, price, duration, created_at
+       FROM routes
+       ORDER BY created_at DESC`,
+    )
+    return { success: true, routes }
+  } catch (error) {
+    console.error("[v0] Get routes error:", error)
+    return { success: false, routes: [] }
+  }
+}
+
 export async function deleteRoute(routeId: string) {
   await verifyAdminSession()
 
@@ -211,6 +279,23 @@ export async function saveStop(stop: {
     success: true,
     message: stop.id ? "Arrêt mis à jour" : "Arrêt créé",
     stop: { ...stop, id: stop.id || Date.now().toString() },
+  }
+}
+
+export async function getStops() {
+  await verifyAdminSession()
+
+  try {
+    const stops = await query(
+      `SELECT s.id, s.stop_name, s.arrival_time, s.stop_order, r.origin, r.destination
+       FROM stops s
+       JOIN routes r ON s.route_id = r.id
+       ORDER BY s.stop_order`,
+    )
+    return { success: true, stops }
+  } catch (error) {
+    console.error("[v0] Get stops error:", error)
+    return { success: false, stops: [] }
   }
 }
 
