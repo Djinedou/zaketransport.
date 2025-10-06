@@ -15,14 +15,15 @@ export function Hero() {
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div className="space-y-8">
             <div className="inline-block">
-              <span className="inline-flex items-center gap-2 rounded-full bg-white/20 backdrop-blur-sm px-4 py-2 text-sm font-medium text-white border border-white/30">
+              <span className="inline-flex items-center gap-2 rounded-full bg-white/20 backdrop-blur-sm px-4 py-2 text-sm font-medium text-blue-900 border border-white/30">
                 <Shield className="h-4 w-4" />
                 Service Premium depuis 2024
               </span>
             </div>
 
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-balance leading-tight text-white">
-              Voyage en Confort et <span className="text-secondary">Sécurité</span>
+              <span className="text-green-400">Voyage</span> en <span className="text-yellow-400">Confort</span> et{" "}
+              <span className="text-red-500">Sécurité</span>
             </h1>
 
             <p className="text-xl text-white/90 text-pretty leading-relaxed">
