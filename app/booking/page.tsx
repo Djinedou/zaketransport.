@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { ArrowRight, Ticket, ArrowLeft } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { QRCodeDisplay } from "@/components/qr-code-display"
 
 export const dynamic = "force-dynamic"
 
@@ -27,7 +28,6 @@ export default function BookingPage() {
   const [formData, setFormData] = useState({
     passengerName: "",
     passengerPhone: "",
-    passengerEmail: "",
     route: searchParams.get("route") || "",
     date: searchParams.get("date") || "",
     time: searchParams.get("time") || "",
@@ -59,6 +59,16 @@ export default function BookingPage() {
   }
 
   if (submitted) {
+    const qrCodeData = JSON.stringify({
+      ticketNumber: bookingReference,
+      passengerName: formData.passengerName,
+      route: formData.route,
+      date: formData.date,
+      time: formData.time,
+      seat: selectedSeat,
+      phone: formData.passengerPhone,
+    })
+
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
@@ -78,9 +88,11 @@ export default function BookingPage() {
                 <div className="text-center">
                   <div className="text-3xl font-bold mb-2">{bookingReference}</div>
                   <p className="text-lg font-semibold text-primary mb-2">Siège N° {selectedSeat}</p>
-                  <p className="text-muted-foreground mb-6">
-                    Votre e-ticket avec code QR a été envoyé par SMS et email
-                  </p>
+                  <p className="text-muted-foreground mb-6">Votre e-ticket avec code QR a été envoyé par SMS</p>
+                </div>
+
+                <div className="flex justify-center">
+                  <QRCodeDisplay data={qrCodeData} size={200} showDownload={true} />
                 </div>
 
                 <Alert>
@@ -188,15 +200,6 @@ export default function BookingPage() {
                             placeholder="+229 XX XX XX XX"
                             value={formData.passengerPhone}
                             onChange={(e) => setFormData({ ...formData, passengerPhone: e.target.value })}
-                          />
-                        </div>
-                        <div className="space-y-2 md:col-span-2">
-                          <Label htmlFor="passengerEmail">Email</Label>
-                          <Input
-                            id="passengerEmail"
-                            type="email"
-                            value={formData.passengerEmail}
-                            onChange={(e) => setFormData({ ...formData, passengerEmail: e.target.value })}
                           />
                         </div>
                       </div>

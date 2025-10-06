@@ -6,10 +6,12 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
-import { Save } from "lucide-react"
+import { Save, Loader2 } from "lucide-react"
+import { saveSystemSettings } from "@/lib/admin-actions"
+import { toast } from "sonner"
 
 export function SystemSettings() {
-  // Mock data
+  const [isLoading, setIsLoading] = useState(false)
   const [settings, setSettings] = useState({
     companyName: "ZAKE TRANSPORT",
     companySlogan: "Voyage en Confort et Sécurité",
@@ -21,9 +23,18 @@ export function SystemSettings() {
     packageFeePerKg: "500",
   })
 
-  const handleSave = () => {
-    // Save settings logic here
-    alert("Paramètres enregistrés avec succès!")
+  const handleSave = async () => {
+    setIsLoading(true)
+    try {
+      const result = await saveSystemSettings(settings)
+      if (result.success) {
+        toast.success(result.message)
+      }
+    } catch (error) {
+      toast.error("Erreur lors de l'enregistrement des paramètres")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -136,9 +147,18 @@ export function SystemSettings() {
         </Card>
 
         <div className="flex justify-end">
-          <Button onClick={handleSave} size="lg">
-            <Save className="h-4 w-4 mr-2" />
-            Enregistrer tous les paramètres
+          <Button onClick={handleSave} size="lg" disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Enregistrement...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                Enregistrer tous les paramètres
+              </>
+            )}
           </Button>
         </div>
       </div>

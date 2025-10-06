@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -17,11 +19,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Plus, Edit, Trash2, Save } from "lucide-react"
+import { Plus, Edit, Trash2, Save, Loader2 } from "lucide-react"
+import { savePolicy, deletePolicy } from "@/lib/admin-actions"
+import { toast } from "sonner"
 
 export function PoliciesManagement() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingPolicy, setEditingPolicy] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   // Mock data
   const policies = [
@@ -62,6 +68,52 @@ export function PoliciesManagement() {
   const handleNew = () => {
     setEditingPolicy(null)
     setIsDialogOpen(true)
+  }
+
+  const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setIsLoading(true)
+
+    const formData = new FormData(e.currentTarget)
+    const policyData = {
+      id: editingPolicy?.id,
+      key: editingPolicy?.key,
+      title: formData.get("title") as string,
+      content: formData.get("content") as string,
+      category: formData.get("category") as string,
+      order: Number.parseInt(formData.get("order") as string),
+      active: true,
+    }
+
+    try {
+      const result = await savePolicy(policyData)
+      if (result.success) {
+        toast.success(result.message)
+        setIsDialogOpen(false)
+      }
+    } catch (error) {
+      toast.error("Erreur lors de l'enregistrement de la politique")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleDelete = async (policyId: string) => {
+    if (!confirm("Êtes-vous sûr de vouloir supprimer cette politique ?")) {
+      return
+    }
+
+    setDeletingId(policyId)
+    try {
+      const result = await deletePolicy(policyId)
+      if (result.success) {
+        toast.success(result.message)
+      }
+    } catch (error) {
+      toast.error("Erreur lors de la suppression de la politique")
+    } finally {
+      setDeletingId(null)
+    }
   }
 
   return (
@@ -116,8 +168,17 @@ export function PoliciesManagement() {
                         <Button variant="ghost" size="sm" onClick={() => handleEdit(policy)}>
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm">
-                          <Trash2 className="h-4 w-4" />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(policy.id)}
+                          disabled={deletingId === policy.id}
+                        >
+                          {deletingId === policy.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
                         </Button>
                       </div>
                     </TableCell>
@@ -135,49 +196,62 @@ export function PoliciesManagement() {
             <DialogTitle>{editingPolicy ? "Modifier la politique" : "Nouvelle politique"}</DialogTitle>
             <DialogDescription>Modifiez les détails de la politique de la compagnie</DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="title">Titre</Label>
-              <Input id="title" defaultValue={editingPolicy?.title} />
+          <form onSubmit={handleSave}>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="title">Titre</Label>
+                <Input id="title" name="title" defaultValue={editingPolicy?.title} required />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="category">Catégorie</Label>
+                <Select name="category" defaultValue={editingPolicy?.category} required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner une catégorie" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="boarding">Embarquement</SelectItem>
+                    <SelectItem value="luggage">Bagages</SelectItem>
+                    <SelectItem value="payment">Paiement</SelectItem>
+                    <SelectItem value="cancellation">Annulation</SelectItem>
+                    <SelectItem value="general">Général</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="content">Contenu</Label>
+                <Textarea
+                  id="content"
+                  name="content"
+                  rows={6}
+                  defaultValue={editingPolicy?.content}
+                  placeholder="Décrivez la politique en détail..."
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="order">Ordre d'affichage</Label>
+                <Input id="order" name="order" type="number" defaultValue={editingPolicy?.order || 1} required />
+              </div>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="category">Catégorie</Label>
-              <Select defaultValue={editingPolicy?.category}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner une catégorie" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="boarding">Embarquement</SelectItem>
-                  <SelectItem value="luggage">Bagages</SelectItem>
-                  <SelectItem value="payment">Paiement</SelectItem>
-                  <SelectItem value="cancellation">Annulation</SelectItem>
-                  <SelectItem value="general">Général</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="content">Contenu</Label>
-              <Textarea
-                id="content"
-                rows={6}
-                defaultValue={editingPolicy?.content}
-                placeholder="Décrivez la politique en détail..."
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="order">Ordre d'affichage</Label>
-              <Input id="order" type="number" defaultValue={editingPolicy?.order || 1} />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-              Annuler
-            </Button>
-            <Button onClick={() => setIsDialogOpen(false)}>
-              <Save className="h-4 w-4 mr-2" />
-              Enregistrer
-            </Button>
-          </DialogFooter>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                Annuler
+              </Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Enregistrement...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Enregistrer
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

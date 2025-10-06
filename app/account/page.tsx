@@ -7,7 +7,8 @@ import { Footer } from "@/components/footer"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { LogOut, Ticket, MapPin, Calendar, Clock, User, QrCode } from "lucide-react"
+import { LogOut, Ticket, MapPin, Calendar, Clock, User } from "lucide-react"
+import { QRCodeDisplay } from "@/components/qr-code-display"
 
 export default async function AccountPage() {
   const booking = await getCurrentBooking()
@@ -32,6 +33,15 @@ export default async function AccountPage() {
     await logout()
     redirect("/")
   }
+
+  const qrCodeData = JSON.stringify({
+    ticketNumber: bookingDetails.ticketNumber,
+    passengerName: bookingDetails.passengerName,
+    route: bookingDetails.route,
+    date: bookingDetails.date,
+    time: bookingDetails.time,
+    seat: bookingDetails.seatNumber,
+  })
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -115,14 +125,12 @@ export default async function AccountPage() {
 
                 {/* QR Code Section */}
                 <div className="mt-6 pt-6 border-t">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                     <div>
                       <p className="text-sm text-muted-foreground mb-1">Code QR pour l'embarquement</p>
                       <p className="text-xs text-muted-foreground">Présentez ce code à la gare</p>
                     </div>
-                    <div className="flex items-center justify-center h-24 w-24 bg-muted rounded-lg">
-                      <QrCode className="h-16 w-16 text-muted-foreground" />
-                    </div>
+                    <QRCodeDisplay data={qrCodeData} size={150} showDownload={true} />
                   </div>
                 </div>
               </CardContent>

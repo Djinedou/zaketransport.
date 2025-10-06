@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -16,11 +18,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Plus, Edit, Trash2, Save, Clock } from "lucide-react"
+import { Plus, Edit, Trash2, Save, Clock, Loader2 } from "lucide-react"
+import { saveSchedule, deleteSchedule } from "@/lib/admin-actions"
+import { toast } from "sonner"
 
 export function SchedulesManagement() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingSchedule, setEditingSchedule] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   // Mock data
   const schedules = [
@@ -62,6 +68,50 @@ export function SchedulesManagement() {
   const handleNew = () => {
     setEditingSchedule(null)
     setIsDialogOpen(true)
+  }
+
+  const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setIsLoading(true)
+
+    const formData = new FormData(e.currentTarget)
+    const scheduleData = {
+      id: editingSchedule?.id,
+      route: formData.get("route") as string,
+      departureTime: formData.get("time") as string,
+      availableSeats: Number.parseInt(formData.get("seats") as string),
+      active: true,
+    }
+
+    try {
+      const result = await saveSchedule(scheduleData)
+      if (result.success) {
+        toast.success(result.message)
+        setIsDialogOpen(false)
+      }
+    } catch (error) {
+      toast.error("Erreur lors de l'enregistrement de l'horaire")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleDelete = async (scheduleId: string) => {
+    if (!confirm("Êtes-vous sûr de vouloir supprimer cet horaire ?")) {
+      return
+    }
+
+    setDeletingId(scheduleId)
+    try {
+      const result = await deleteSchedule(scheduleId)
+      if (result.success) {
+        toast.success(result.message)
+      }
+    } catch (error) {
+      toast.error("Erreur lors de la suppression de l'horaire")
+    } finally {
+      setDeletingId(null)
+    }
   }
 
   return (
@@ -117,8 +167,17 @@ export function SchedulesManagement() {
                         <Button variant="ghost" size="sm" onClick={() => handleEdit(schedule)}>
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm">
-                          <Trash2 className="h-4 w-4" />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(schedule.id)}
+                          disabled={deletingId === schedule.id}
+                        >
+                          {deletingId === schedule.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
                         </Button>
                       </div>
                     </TableCell>
@@ -136,41 +195,58 @@ export function SchedulesManagement() {
             <DialogTitle>{editingSchedule ? "Modifier l'horaire" : "Nouvel horaire"}</DialogTitle>
             <DialogDescription>Configurez les détails de l'horaire de départ</DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="route">Itinéraire</Label>
-              <Select defaultValue={editingSchedule?.route}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner un itinéraire" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Cotonou → Natitingou">Cotonou → Natitingou</SelectItem>
-                  <SelectItem value="Natitingou → Cotonou">Natitingou → Cotonou</SelectItem>
-                  <SelectItem value="Aledjo → Natitingou">Aledjo → Natitingou</SelectItem>
-                  <SelectItem value="Natitingou → Aledjo">Natitingou → Aledjo</SelectItem>
-                  <SelectItem value="Djougou → Natitingou">Djougou → Natitingou</SelectItem>
-                  <SelectItem value="Natitingou → Djougou">Natitingou → Djougou</SelectItem>
-                </SelectContent>
-              </Select>
+          <form onSubmit={handleSave}>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="route">Itinéraire</Label>
+                <Select name="route" defaultValue={editingSchedule?.route} required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner un itinéraire" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Cotonou → Natitingou">Cotonou → Natitingou</SelectItem>
+                    <SelectItem value="Natitingou → Cotonou">Natitingou → Cotonou</SelectItem>
+                    <SelectItem value="Aledjo → Natitingou">Aledjo → Natitingou</SelectItem>
+                    <SelectItem value="Natitingou → Aledjo">Natitingou → Aledjo</SelectItem>
+                    <SelectItem value="Djougou → Natitingou">Djougou → Natitingou</SelectItem>
+                    <SelectItem value="Natitingou → Djougou">Natitingou → Djougou</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="time">Heure de départ</Label>
+                <Input id="time" name="time" type="time" defaultValue={editingSchedule?.departureTime} required />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="seats">Nombre de sièges</Label>
+                <Input
+                  id="seats"
+                  name="seats"
+                  type="number"
+                  defaultValue={editingSchedule?.availableSeats || 40}
+                  required
+                />
+              </div>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="time">Heure de départ</Label>
-              <Input id="time" type="time" defaultValue={editingSchedule?.departureTime} />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="seats">Nombre de sièges</Label>
-              <Input id="seats" type="number" defaultValue={editingSchedule?.availableSeats || 40} />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-              Annuler
-            </Button>
-            <Button onClick={() => setIsDialogOpen(false)}>
-              <Save className="h-4 w-4 mr-2" />
-              Enregistrer
-            </Button>
-          </DialogFooter>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                Annuler
+              </Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Enregistrement...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Enregistrer
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
