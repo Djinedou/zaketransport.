@@ -14,17 +14,6 @@ export async function query(text: string, params?: any[]) {
   }
 }
 
-// Routes
-export async function getRoutes() {
-  return await query("SELECT * FROM routes ORDER BY origin, destination")
-}
-
-export async function getRouteById(id: number) {
-  const result = await query("SELECT * FROM routes WHERE id = $1", [id])
-  return result[0]
-}
-
-// Bookings
 export async function createBooking(data: {
   ticketNumber: string
   passengerName: string
@@ -62,73 +51,4 @@ export async function getBookingByTicketNumber(ticketNumber: string) {
     [ticketNumber],
   )
   return result[0]
-}
-
-// Packages
-export async function createPackage(data: {
-  trackingNumber: string
-  senderName: string
-  senderPhone: string
-  recipientName: string
-  recipientPhone: string
-  routeId: number
-  packageDescription: string
-}) {
-  const result = await query(
-    `INSERT INTO packages (tracking_number, sender_name, sender_phone, recipient_name, recipient_phone, route_id, package_description, status)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending')
-     RETURNING *`,
-    [
-      data.trackingNumber,
-      data.senderName,
-      data.senderPhone,
-      data.recipientName,
-      data.recipientPhone,
-      data.routeId,
-      data.packageDescription,
-    ],
-  )
-  return result[0]
-}
-
-export async function getPackageByTrackingNumber(trackingNumber: string) {
-  const result = await query(
-    `SELECT p.*, r.origin, r.destination 
-     FROM packages p 
-     JOIN routes r ON p.route_id = r.id 
-     WHERE p.tracking_number = $1`,
-    [trackingNumber],
-  )
-  return result[0]
-}
-
-// Reports
-export async function createReport(data: {
-  reporterName: string
-  phone: string
-  reportType: string
-  description: string
-}) {
-  const result = await query(
-    `INSERT INTO reports (reporter_name, phone, report_type, description, status)
-     VALUES ($1, $2, $3, $4, 'pending')
-     RETURNING *`,
-    [data.reporterName, data.phone, data.reportType, data.description],
-  )
-  return result[0]
-}
-
-// System Settings
-export async function getSystemSettings() {
-  return await query("SELECT * FROM system_settings")
-}
-
-export async function updateSystemSetting(key: string, value: string) {
-  await query(
-    `INSERT INTO system_settings (setting_key, setting_value, updated_at)
-     VALUES ($1, $2, CURRENT_TIMESTAMP)
-     ON CONFLICT (setting_key) 
-     DO UPDATE SET setting_value = $2, updated_at = CURRENT_TIMESTAMP`,
-    [key, value],
-  )
 }
