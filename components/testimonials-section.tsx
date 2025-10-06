@@ -39,10 +39,10 @@ export function TestimonialsSection() {
     <section className="py-16 px-4 bg-muted/30">
       <div className="container mx-auto max-w-6xl">
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-balance">What Our Passengers Say</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-balance">Ce Que Disent Nos Passagers</h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto text-pretty">
-            Don't just take our word for it. Here's what our valued customers have to say about their experience with
-            Zake Transport.
+            Ne nous croyez pas sur parole. Voici ce que nos précieux clients disent de leur expérience avec Zake
+            Transport.
           </p>
         </div>
 
