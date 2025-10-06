@@ -35,26 +35,33 @@ export default function AdminPage() {
   const [routes, setRoutes] = useState<Route[]>([])
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const loadRoutes = async () => {
     try {
+      setError(null)
       const response = await fetch("/api/admin/routes")
+      if (!response.ok) throw new Error("Failed to load routes")
       const data = await response.json()
-      setRoutes(data)
+      setRoutes(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error("[v0] Error loading routes:", error)
-      toast.error("Erreur de chargement des routes")
+      setError("Impossible de charger les routes")
+      setRoutes([])
     }
   }
 
   const loadBookings = async () => {
     try {
+      setError(null)
       const response = await fetch("/api/admin/bookings")
+      if (!response.ok) throw new Error("Failed to load bookings")
       const data = await response.json()
-      setBookings(data)
+      setBookings(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error("[v0] Error loading bookings:", error)
-      toast.error("Erreur de chargement des réservations")
+      setError("Impossible de charger les réservations")
+      setBookings([])
     }
   }
 
@@ -94,7 +101,7 @@ export default function AdminPage() {
 
       if (response.ok) {
         toast.success("Prix mis à jour avec succès")
-        loadRoutes()
+        await loadRoutes()
       } else {
         toast.error("Erreur lors de la mise à jour")
       }
@@ -134,7 +141,7 @@ export default function AdminPage() {
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle>Connexion Administrateur</CardTitle>
-            <CardDescription>Entrez votre mot de passe</CardDescription>
+            <CardDescription>Mot de passe: admin123</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
@@ -159,18 +166,20 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Tableau de Bord Administrateur</h1>
-          <Button onClick={() => setIsAuthenticated(false)} variant="outline">
+          <h1 className="text-2xl md:text-3xl font-bold">Tableau de Bord</h1>
+          <Button onClick={() => setIsAuthenticated(false)} variant="outline" size="sm">
             Déconnexion
           </Button>
         </div>
 
+        {error && <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded mb-4">{error}</div>}
+
         <Tabs defaultValue="routes" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="routes">Routes & Prix</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="routes">Routes</TabsTrigger>
             <TabsTrigger value="settings">Paramètres</TabsTrigger>
             <TabsTrigger value="bookings">Réservations</TabsTrigger>
           </TabsList>
@@ -178,39 +187,42 @@ export default function AdminPage() {
           <TabsContent value="routes">
             <Card>
               <CardHeader>
-                <CardTitle>Gestion des Routes et Prix</CardTitle>
-                <CardDescription>Modifier les prix des trajets</CardDescription>
+                <CardTitle>Gestion des Prix</CardTitle>
+                <CardDescription>Modifier les tarifs des trajets</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {routes.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Chargement des routes...</p>
+                  <p className="text-sm text-muted-foreground">Aucune route disponible</p>
                 ) : (
-                  <div className="space-y-4">
-                    {routes.map((route) => (
-                      <div key={route.id} className="flex items-end gap-4">
-                        <div className="flex-1">
-                          <Label>
-                            {route.origin} → {route.destination}
-                          </Label>
-                          <Input
-                            type="number"
-                            id={`price-${route.id}`}
-                            defaultValue={route.price}
-                            placeholder="Prix en CFA"
-                          />
-                        </div>
-                        <Button
-                          onClick={() => {
-                            const input = document.getElementById(`price-${route.id}`) as HTMLInputElement
-                            handleSaveRoute(route.id, input.value)
-                          }}
-                          disabled={loading}
-                        >
-                          Enregistrer
-                        </Button>
+                  routes.map((route) => (
+                    <div
+                      key={route.id}
+                      className="flex flex-col sm:flex-row items-start sm:items-end gap-4 p-4 border rounded-lg"
+                    >
+                      <div className="flex-1 w-full">
+                        <Label className="text-sm font-medium">
+                          {route.origin} → {route.destination}
+                        </Label>
+                        <Input
+                          type="number"
+                          id={`price-${route.id}`}
+                          defaultValue={route.price}
+                          placeholder="Prix en CFA"
+                          className="mt-2"
+                        />
                       </div>
-                    ))}
-                  </div>
+                      <Button
+                        onClick={() => {
+                          const input = document.getElementById(`price-${route.id}`) as HTMLInputElement
+                          if (input) handleSaveRoute(route.id, input.value)
+                        }}
+                        disabled={loading}
+                        className="w-full sm:w-auto"
+                      >
+                        {loading ? "..." : "Enregistrer"}
+                      </Button>
+                    </div>
+                  ))
                 )}
               </CardContent>
             </Card>
@@ -220,55 +232,40 @@ export default function AdminPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Paramètres Système</CardTitle>
-                <CardDescription>Configuration générale</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="company-name">Nom de l'entreprise</Label>
-                    <div className="flex gap-2">
-                      <Input id="company-name" defaultValue="Zake Transport" />
-                      <Button
-                        onClick={() => {
-                          const input = document.getElementById("company-name") as HTMLInputElement
-                          handleSaveSetting("company_name", input.value)
-                        }}
-                        disabled={loading}
-                      >
-                        Enregistrer
-                      </Button>
+                  {[
+                    {
+                      id: "company-name",
+                      label: "Nom de l'entreprise",
+                      defaultValue: "Zake Transport",
+                      key: "company_name",
+                    },
+                    { id: "company-phone", label: "Téléphone", defaultValue: "+229 XX XX XX XX", key: "company_phone" },
+                    {
+                      id: "company-email",
+                      label: "Email",
+                      defaultValue: "contact@zaketransport.com",
+                      key: "company_email",
+                    },
+                  ].map((setting) => (
+                    <div key={setting.id} className="space-y-2">
+                      <Label htmlFor={setting.id}>{setting.label}</Label>
+                      <div className="flex gap-2">
+                        <Input id={setting.id} defaultValue={setting.defaultValue} className="flex-1" />
+                        <Button
+                          onClick={() => {
+                            const input = document.getElementById(setting.id) as HTMLInputElement
+                            if (input) handleSaveSetting(setting.key, input.value)
+                          }}
+                          disabled={loading}
+                        >
+                          {loading ? "..." : "Sauver"}
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="company-phone">Téléphone</Label>
-                    <div className="flex gap-2">
-                      <Input id="company-phone" defaultValue="+229 XX XX XX XX" />
-                      <Button
-                        onClick={() => {
-                          const input = document.getElementById("company-phone") as HTMLInputElement
-                          handleSaveSetting("company_phone", input.value)
-                        }}
-                        disabled={loading}
-                      >
-                        Enregistrer
-                      </Button>
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="company-email">Email</Label>
-                    <div className="flex gap-2">
-                      <Input id="company-email" defaultValue="contact@zaketransport.com" />
-                      <Button
-                        onClick={() => {
-                          const input = document.getElementById("company-email") as HTMLInputElement
-                          handleSaveSetting("company_email", input.value)
-                        }}
-                        disabled={loading}
-                      >
-                        Enregistrer
-                      </Button>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
@@ -277,34 +274,41 @@ export default function AdminPage() {
           <TabsContent value="bookings">
             <Card>
               <CardHeader>
-                <CardTitle>Réservations Récentes</CardTitle>
-                <CardDescription>Liste des dernières réservations</CardDescription>
+                <CardTitle>Réservations</CardTitle>
+                <CardDescription>{bookings.length} réservation(s)</CardDescription>
               </CardHeader>
               <CardContent>
                 {bookings.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Aucune réservation pour le moment.</p>
+                  <p className="text-sm text-muted-foreground">Aucune réservation</p>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {bookings.map((booking) => (
-                      <div key={booking.id} className="border rounded-lg p-4">
-                        <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div key={booking.id} className="border rounded-lg p-4 space-y-2">
+                        <div className="flex justify-between items-start">
+                          <span className="font-semibold">{booking.ticket_number}</span>
+                          <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                            {booking.status}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                           <div>
-                            <span className="font-semibold">Ticket:</span> {booking.ticket_number}
+                            <span className="text-muted-foreground">Passager:</span> {booking.passenger_name}
                           </div>
                           <div>
-                            <span className="font-semibold">Passager:</span> {booking.passenger_name}
+                            <span className="text-muted-foreground">Téléphone:</span> {booking.phone}
                           </div>
                           <div>
-                            <span className="font-semibold">Trajet:</span> {booking.origin} → {booking.destination}
+                            <span className="text-muted-foreground">Trajet:</span> {booking.origin} →{" "}
+                            {booking.destination}
                           </div>
                           <div>
-                            <span className="font-semibold">Date:</span> {booking.travel_date}
+                            <span className="text-muted-foreground">Date:</span> {booking.travel_date}
                           </div>
                           <div>
-                            <span className="font-semibold">Siège:</span> {booking.seat_number}
+                            <span className="text-muted-foreground">Siège:</span> {booking.seat_number}
                           </div>
                           <div>
-                            <span className="font-semibold">Petit-déjeuner:</span> {booking.breakfast_choice}
+                            <span className="text-muted-foreground">Petit-déj:</span> {booking.breakfast_choice}
                           </div>
                         </div>
                       </div>
