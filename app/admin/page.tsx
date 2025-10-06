@@ -1,147 +1,152 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
+import { Loader2 } from "lucide-react"
 
-interface Route {
-  id: number
-  origin: string
-  destination: string
-  price: number
-}
-
-interface Booking {
-  id: number
-  ticket_number: string
-  passenger_name: string
-  phone: string
-  origin: string
-  destination: string
-  travel_date: string
-  seat_number: number
-  breakfast_choice: string
-  status: string
-}
+export const dynamic = "force-dynamic"
 
 export default function AdminPage() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [password, setPassword] = useState("")
-  const [routes, setRoutes] = useState<Route[]>([])
-  const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
-  const loadRoutes = async () => {
-    try {
-      setError(null)
-      const response = await fetch("/api/admin/routes")
-      if (!response.ok) throw new Error("Failed to load routes")
-      const data = await response.json()
-      setRoutes(Array.isArray(data) ? data : [])
-    } catch (error) {
-      console.error("[v0] Error loading routes:", error)
-      setError("Impossible de charger les routes")
-      setRoutes([])
-    }
-  }
+  // Routes state
+  const [routes, setRoutes] = useState<any[]>([])
+  const [loadingRoutes, setLoadingRoutes] = useState(false)
 
-  const loadBookings = async () => {
-    try {
-      setError(null)
-      const response = await fetch("/api/admin/bookings")
-      if (!response.ok) throw new Error("Failed to load bookings")
-      const data = await response.json()
-      setBookings(Array.isArray(data) ? data : [])
-    } catch (error) {
-      console.error("[v0] Error loading bookings:", error)
-      setError("Impossible de charger les réservations")
-      setBookings([])
-    }
-  }
+  // Settings state
+  const [settings, setSettings] = useState({
+    company_name: "",
+    phone: "",
+    email: "",
+    address: "",
+  })
+  const [loadingSettings, setLoadingSettings] = useState(false)
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      loadRoutes()
-      loadBookings()
-    }
-  }, [isAuthenticated])
+  // Bookings state
+  const [bookings, setBookings] = useState<any[]>([])
+  const [loadingBookings, setLoadingBookings] = useState(false)
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault()
     if (password === "admin123") {
-      setIsAuthenticated(true)
+      setIsLoggedIn(true)
       toast.success("Connexion réussie")
+      loadAllData()
     } else {
       toast.error("Mot de passe incorrect")
     }
   }
 
-  const handleSaveRoute = async (routeId: number, price: string) => {
+  const loadAllData = async () => {
+    await Promise.all([fetchRoutes(), fetchSettings(), fetchBookings()])
+  }
+
+  const fetchRoutes = async () => {
+    setLoadingRoutes(true)
+    try {
+      const res = await fetch("/api/admin/routes")
+      if (res.ok) {
+        const data = await res.json()
+        setRoutes(data)
+      }
+    } catch (error) {
+      console.error("Error fetching routes:", error)
+    } finally {
+      setLoadingRoutes(false)
+    }
+  }
+
+  const fetchSettings = async () => {
+    setLoadingSettings(true)
+    try {
+      const res = await fetch("/api/admin/settings")
+      if (res.ok) {
+        const data = await res.json()
+        if (data.length > 0) {
+          setSettings(data[0])
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching settings:", error)
+    } finally {
+      setLoadingSettings(false)
+    }
+  }
+
+  const fetchBookings = async () => {
+    setLoadingBookings(true)
+    try {
+      const res = await fetch("/api/admin/bookings")
+      if (res.ok) {
+        const data = await res.json()
+        setBookings(data)
+      }
+    } catch (error) {
+      console.error("Error fetching bookings:", error)
+    } finally {
+      setLoadingBookings(false)
+    }
+  }
+
+  const updateRoutePrice = async (routeId: number, newPrice: number) => {
     setLoading(true)
     try {
-      const route = routes.find((r) => r.id === routeId)
-      if (!route) return
-
-      const response = await fetch("/api/admin/routes", {
-        method: "POST",
+      const res = await fetch("/api/admin/routes", {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: routeId,
-          origin: route.origin,
-          destination: route.destination,
-          price: Number.parseFloat(price),
-        }),
+        body: JSON.stringify({ id: routeId, price: newPrice }),
       })
 
-      if (response.ok) {
-        toast.success("Prix mis à jour avec succès")
-        await loadRoutes()
+      if (res.ok) {
+        toast.success("Prix mis à jour")
+        await fetchRoutes()
       } else {
         toast.error("Erreur lors de la mise à jour")
       }
     } catch (error) {
-      console.error("[v0] Error saving route:", error)
-      toast.error("Erreur lors de la sauvegarde")
+      toast.error("Erreur de connexion")
     } finally {
       setLoading(false)
     }
   }
 
-  const handleSaveSetting = async (key: string, value: string) => {
+  const saveSettings = async () => {
     setLoading(true)
     try {
-      const response = await fetch("/api/admin/settings", {
+      const res = await fetch("/api/admin/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key, value }),
+        body: JSON.stringify(settings),
       })
 
-      if (response.ok) {
-        toast.success("Paramètre enregistré avec succès")
+      if (res.ok) {
+        toast.success("Paramètres enregistrés")
       } else {
-        toast.error("Erreur lors de la sauvegarde")
+        toast.error("Erreur lors de l'enregistrement")
       }
     } catch (error) {
-      console.error("[v0] Error saving setting:", error)
-      toast.error("Erreur lors de la sauvegarde")
+      toast.error("Erreur de connexion")
     } finally {
       setLoading(false)
     }
   }
 
-  if (!isAuthenticated) {
+  if (!isLoggedIn) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle>Connexion Administrateur</CardTitle>
-            <CardDescription>Mot de passe: admin123</CardDescription>
+            <CardDescription>Entrez le mot de passe pour accéder au panneau d'administration</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
@@ -169,17 +174,15 @@ export default function AdminPage() {
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold">Tableau de Bord</h1>
-          <Button onClick={() => setIsAuthenticated(false)} variant="outline" size="sm">
+          <h1 className="text-3xl font-bold">Panneau d'Administration</h1>
+          <Button variant="outline" onClick={() => setIsLoggedIn(false)}>
             Déconnexion
           </Button>
         </div>
 
-        {error && <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded mb-4">{error}</div>}
-
         <Tabs defaultValue="routes" className="space-y-4">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="routes">Routes</TabsTrigger>
+            <TabsTrigger value="routes">Routes & Prix</TabsTrigger>
             <TabsTrigger value="settings">Paramètres</TabsTrigger>
             <TabsTrigger value="bookings">Réservations</TabsTrigger>
           </TabsList>
@@ -187,42 +190,41 @@ export default function AdminPage() {
           <TabsContent value="routes">
             <Card>
               <CardHeader>
-                <CardTitle>Gestion des Prix</CardTitle>
-                <CardDescription>Modifier les tarifs des trajets</CardDescription>
+                <CardTitle>Gestion des Routes et Prix</CardTitle>
+                <CardDescription>Modifier les prix des trajets</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {routes.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Aucune route disponible</p>
+              <CardContent>
+                {loadingRoutes ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                  </div>
+                ) : routes.length === 0 ? (
+                  <p className="text-center text-gray-500 py-8">Aucune route trouvée</p>
                 ) : (
-                  routes.map((route) => (
-                    <div
-                      key={route.id}
-                      className="flex flex-col sm:flex-row items-start sm:items-end gap-4 p-4 border rounded-lg"
-                    >
-                      <div className="flex-1 w-full">
-                        <Label className="text-sm font-medium">
-                          {route.origin} → {route.destination}
-                        </Label>
-                        <Input
-                          type="number"
-                          id={`price-${route.id}`}
-                          defaultValue={route.price}
-                          placeholder="Prix en CFA"
-                          className="mt-2"
-                        />
+                  <div className="space-y-4">
+                    {routes.map((route) => (
+                      <div key={route.id} className="flex items-center gap-4 p-4 border rounded-lg">
+                        <div className="flex-1">
+                          <p className="font-semibold">
+                            {route.origin} → {route.destination}
+                          </p>
+                          <p className="text-sm text-gray-500">Prix actuel: {route.price} CFA</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Input type="number" defaultValue={route.price} className="w-32" id={`price-${route.id}`} />
+                          <Button
+                            onClick={() => {
+                              const input = document.getElementById(`price-${route.id}`) as HTMLInputElement
+                              updateRoutePrice(route.id, Number.parseInt(input.value))
+                            }}
+                            disabled={loading}
+                          >
+                            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Mettre à jour"}
+                          </Button>
+                        </div>
                       </div>
-                      <Button
-                        onClick={() => {
-                          const input = document.getElementById(`price-${route.id}`) as HTMLInputElement
-                          if (input) handleSaveRoute(route.id, input.value)
-                        }}
-                        disabled={loading}
-                        className="w-full sm:w-auto"
-                      >
-                        {loading ? "..." : "Enregistrer"}
-                      </Button>
-                    </div>
-                  ))
+                    ))}
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -232,41 +234,54 @@ export default function AdminPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Paramètres Système</CardTitle>
+                <CardDescription>Configurer les informations de l'entreprise</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-4">
-                  {[
-                    {
-                      id: "company-name",
-                      label: "Nom de l'entreprise",
-                      defaultValue: "Zake Transport",
-                      key: "company_name",
-                    },
-                    { id: "company-phone", label: "Téléphone", defaultValue: "+229 XX XX XX XX", key: "company_phone" },
-                    {
-                      id: "company-email",
-                      label: "Email",
-                      defaultValue: "contact@zaketransport.com",
-                      key: "company_email",
-                    },
-                  ].map((setting) => (
-                    <div key={setting.id} className="space-y-2">
-                      <Label htmlFor={setting.id}>{setting.label}</Label>
-                      <div className="flex gap-2">
-                        <Input id={setting.id} defaultValue={setting.defaultValue} className="flex-1" />
-                        <Button
-                          onClick={() => {
-                            const input = document.getElementById(setting.id) as HTMLInputElement
-                            if (input) handleSaveSetting(setting.key, input.value)
-                          }}
-                          disabled={loading}
-                        >
-                          {loading ? "..." : "Sauver"}
-                        </Button>
-                      </div>
+              <CardContent>
+                {loadingSettings ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="company_name">Nom de l'entreprise</Label>
+                      <Input
+                        id="company_name"
+                        value={settings.company_name}
+                        onChange={(e) => setSettings({ ...settings, company_name: e.target.value })}
+                      />
                     </div>
-                  ))}
-                </div>
+                    <div>
+                      <Label htmlFor="phone">Téléphone</Label>
+                      <Input
+                        id="phone"
+                        value={settings.phone}
+                        onChange={(e) => setSettings({ ...settings, phone: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={settings.email}
+                        onChange={(e) => setSettings({ ...settings, email: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="address">Adresse</Label>
+                      <Input
+                        id="address"
+                        value={settings.address}
+                        onChange={(e) => setSettings({ ...settings, address: e.target.value })}
+                      />
+                    </div>
+                    <Button onClick={saveSettings} disabled={loading} className="w-full">
+                      {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                      Enregistrer les paramètres
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -275,41 +290,39 @@ export default function AdminPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Réservations</CardTitle>
-                <CardDescription>{bookings.length} réservation(s)</CardDescription>
+                <CardDescription>Liste de toutes les réservations</CardDescription>
               </CardHeader>
               <CardContent>
-                {bookings.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Aucune réservation</p>
+                {loadingBookings ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                  </div>
+                ) : bookings.length === 0 ? (
+                  <p className="text-center text-gray-500 py-8">Aucune réservation trouvée</p>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     {bookings.map((booking) => (
-                      <div key={booking.id} className="border rounded-lg p-4 space-y-2">
-                        <div className="flex justify-between items-start">
-                          <span className="font-semibold">{booking.ticket_number}</span>
-                          <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
-                            {booking.status}
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-                          <div>
-                            <span className="text-muted-foreground">Passager:</span> {booking.passenger_name}
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Téléphone:</span> {booking.phone}
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Trajet:</span> {booking.origin} →{" "}
-                            {booking.destination}
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Date:</span> {booking.travel_date}
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Siège:</span> {booking.seat_number}
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Petit-déj:</span> {booking.breakfast_choice}
-                          </div>
+                      <div key={booking.id} className="p-4 border rounded-lg">
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <p>
+                            <span className="font-semibold">Ticket:</span> {booking.ticket_number}
+                          </p>
+                          <p>
+                            <span className="font-semibold">Passager:</span> {booking.passenger_name}
+                          </p>
+                          <p>
+                            <span className="font-semibold">Téléphone:</span> {booking.phone}
+                          </p>
+                          <p>
+                            <span className="font-semibold">Siège:</span> {booking.seat_number}
+                          </p>
+                          <p>
+                            <span className="font-semibold">Date:</span>{" "}
+                            {new Date(booking.travel_date).toLocaleDateString()}
+                          </p>
+                          <p>
+                            <span className="font-semibold">Statut:</span> {booking.status}
+                          </p>
                         </div>
                       </div>
                     ))}
