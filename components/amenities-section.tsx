@@ -3,8 +3,8 @@ import { Check } from "lucide-react"
 
 const amenities = [
   "Toilettes modernes à bord",
-  "Sièges inclinables confortables",
   "Climatisation",
+  "Ports USB et prises de recharge",
   "Espace pour les jambes généreux",
   "Éclairage individuel",
   "Porte-gobelets",
@@ -37,7 +37,11 @@ export function AmenitiesSection() {
           <div className="relative">
             <Card className="overflow-hidden">
               <CardContent className="p-0">
-                <img src="/luxury-bus-interior-with-modern-amenities-and-comf.jpg" alt="Intérieur du bus" className="w-full h-auto" />
+                <img
+                  src="/luxury-bus-interior-with-modern-amenities-and-comf.jpg"
+                  alt="Intérieur du bus"
+                  className="w-full h-auto"
+                />
               </CardContent>
             </Card>
           </div>

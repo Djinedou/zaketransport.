@@ -1,5 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Bus, Package, Shield, Clock, Wifi, Coffee } from "lucide-react"
+import { Bus, Package, Shield, Clock, Wifi, Coffee, Zap } from "lucide-react"
 
 const services = [
   {
@@ -11,6 +11,11 @@ const services = [
     icon: Wifi,
     title: "WiFi Gratuit",
     description: "Restez connecté pendant tout votre voyage avec notre WiFi haut débit",
+  },
+  {
+    icon: Zap,
+    title: "Ports de Recharge",
+    description: "Prises USB et ports de recharge disponibles à chaque siège",
   },
   {
     icon: Coffee,
