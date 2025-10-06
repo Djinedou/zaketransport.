@@ -4,6 +4,7 @@ import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
 import { Analytics } from "@vercel/analytics/next"
 import { Suspense } from "react"
+import { UpdatePrompt } from "@/components/update-prompt"
 import "./globals.css"
 
 export const metadata: Metadata = {
@@ -44,7 +45,10 @@ export default function RootLayout({
             __html: `
               if ('serviceWorker' in navigator) {
                 window.addEventListener('load', () => {
-                  navigator.serviceWorker.register('/sw.js')
+                  navigator.serviceWorker.register('/sw.js').then((registration) => {
+                    // Check for updates on page load
+                    registration.update()
+                  })
                 })
               }
             `,
@@ -53,6 +57,7 @@ export default function RootLayout({
       </head>
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} antialiased`}>
         <Suspense fallback={null}>{children}</Suspense>
+        <UpdatePrompt />
         <Analytics />
       </body>
     </html>

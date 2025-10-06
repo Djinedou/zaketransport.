@@ -1,6 +1,7 @@
 "use server"
 
 import { cookies } from "next/headers"
+import { getBookingByTicketNumber } from "./db"
 
 export interface BookingSession {
   bookingId: string
@@ -9,55 +10,45 @@ export interface BookingSession {
   route: string
   date: string
   time: string
-}
-
-// Mock bookings database - in production, fetch from real database
-const bookings: Record<string, BookingSession> = {
-  "BK-2024-001": {
-    bookingId: "BK-2024-001",
-    ticketNumber: "BK-2024-001",
-    passengerName: "Jean Kouassi",
-    route: "Cotonou → Natitingou",
-    date: "2024-01-20",
-    time: "07:00",
-  },
-  "BK-2024-002": {
-    bookingId: "BK-2024-002",
-    ticketNumber: "BK-2024-002",
-    passengerName: "Marie Dossou",
-    route: "Natitingou → Cotonou",
-    date: "2024-01-25",
-    time: "20:00",
-  },
-  "BK-2024-003": {
-    bookingId: "BK-2024-003",
-    ticketNumber: "BK-2024-003",
-    passengerName: "Paul Agbodjan",
-    route: "Djougou → Cotonou",
-    date: "2024-01-22",
-    time: "07:00",
-  },
+  seatNumber: number
+  breakfastChoice: string
 }
 
 export async function loginWithTicket(
   ticketNumber: string,
 ): Promise<{ success: boolean; error?: string; booking?: BookingSession }> {
-  const booking = bookings[ticketNumber.toUpperCase()]
+  try {
+    const booking = await getBookingByTicketNumber(ticketNumber.toUpperCase())
 
-  if (!booking) {
-    return { success: false, error: "Numéro de billet invalide. Veuillez vérifier votre numéro de réservation." }
+    if (!booking) {
+      return { success: false, error: "Numéro de billet invalide. Veuillez vérifier votre numéro de réservation." }
+    }
+
+    const bookingSession: BookingSession = {
+      bookingId: booking.id.toString(),
+      ticketNumber: booking.ticket_number,
+      passengerName: booking.passenger_name,
+      route: `${booking.origin} → ${booking.destination}`,
+      date: booking.travel_date,
+      time: booking.departure_time,
+      seatNumber: booking.seat_number,
+      breakfastChoice: booking.breakfast_choice,
+    }
+
+    // Set session cookie with booking info
+    const cookieStore = await cookies()
+    cookieStore.set("booking_session", JSON.stringify(bookingSession), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 30, // 30 days
+    })
+
+    return { success: true, booking: bookingSession }
+  } catch (error) {
+    console.error("[v0] Login error:", error)
+    return { success: false, error: "Une erreur s'est produite. Veuillez réessayer." }
   }
-
-  // Set session cookie with booking info
-  const cookieStore = await cookies()
-  cookieStore.set("booking_session", JSON.stringify(booking), {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 60 * 60 * 24 * 30, // 30 days
-  })
-
-  return { success: true, booking }
 }
 
 export async function logout(): Promise<void> {

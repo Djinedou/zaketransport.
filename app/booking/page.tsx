@@ -17,6 +17,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { ArrowRight, Ticket, ArrowLeft, Coffee } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { QRCodeDisplay } from "@/components/qr-code-display"
+import { createBooking } from "@/lib/db"
 
 export const dynamic = "force-dynamic"
 
@@ -45,7 +46,7 @@ export default function BookingPage() {
     setBookedSeats(mockBookedSeats)
   }, [])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!selectedSeat) {
@@ -53,11 +54,31 @@ export default function BookingPage() {
       return
     }
 
-    const reference = `BK-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000)
-      .toString()
-      .padStart(4, "0")}`
-    setBookingReference(reference)
-    setSubmitted(true)
+    try {
+      const reference = `BK-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000)
+        .toString()
+        .padStart(4, "0")}`
+
+      // Get route ID from route string
+      const routeId = 1 // This should be fetched based on the selected route
+
+      await createBooking({
+        ticketNumber: reference,
+        passengerName: formData.passengerName,
+        phone: formData.passengerPhone,
+        routeId,
+        travelDate: formData.date,
+        departureTime: formData.time,
+        seatNumber: selectedSeat,
+        breakfastChoice: formData.breakfast,
+      })
+
+      setBookingReference(reference)
+      setSubmitted(true)
+    } catch (error) {
+      console.error("[v0] Booking error:", error)
+      alert("Une erreur s'est produite. Veuillez réessayer.")
+    }
   }
 
   if (submitted) {
