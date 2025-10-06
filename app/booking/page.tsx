@@ -13,7 +13,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ArrowRight, Ticket, ArrowLeft } from "lucide-react"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { ArrowRight, Ticket, ArrowLeft, Coffee } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { QRCodeDisplay } from "@/components/qr-code-display"
 
@@ -21,9 +22,9 @@ export const dynamic = "force-dynamic"
 
 export default function BookingPage() {
   const searchParams = useSearchParams()
-  const [step, setStep] = useState(1) // Added step state for multi-step booking
-  const [selectedSeat, setSelectedSeat] = useState<number | null>(null) // Added seat selection state
-  const [bookedSeats, setBookedSeats] = useState<number[]>([]) // Mock booked seats
+  const [step, setStep] = useState(1)
+  const [selectedSeat, setSelectedSeat] = useState<number | null>(null)
+  const [bookedSeats, setBookedSeats] = useState<number[]>([])
 
   const [formData, setFormData] = useState({
     passengerName: "",
@@ -32,6 +33,7 @@ export default function BookingPage() {
     date: searchParams.get("date") || "",
     time: searchParams.get("time") || "",
     paymentMethod: "",
+    breakfast: "",
     acceptTerms: false,
   })
 
@@ -67,6 +69,7 @@ export default function BookingPage() {
       time: formData.time,
       seat: selectedSeat,
       phone: formData.passengerPhone,
+      breakfast: formData.breakfast,
     })
 
     return (
@@ -88,6 +91,9 @@ export default function BookingPage() {
                 <div className="text-center">
                   <div className="text-3xl font-bold mb-2">{bookingReference}</div>
                   <p className="text-lg font-semibold text-primary mb-2">Siège N° {selectedSeat}</p>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Petit-déjeuner: <span className="font-medium">{formData.breakfast}</span>
+                  </p>
                   <p className="text-muted-foreground mb-6">Votre e-ticket avec code QR a été envoyé par SMS</p>
                 </div>
 
@@ -223,10 +229,6 @@ export default function BookingPage() {
                             <SelectContent>
                               <SelectItem value="Cotonou → Natitingou">Cotonou → Natitingou (15,000 FCFA)</SelectItem>
                               <SelectItem value="Natitingou → Cotonou">Natitingou → Cotonou (15,000 FCFA)</SelectItem>
-                              <SelectItem value="Aledjo → Natitingou">Aledjo → Natitingou (8,000 FCFA)</SelectItem>
-                              <SelectItem value="Natitingou → Aledjo">Natitingou → Aledjo (8,000 FCFA)</SelectItem>
-                              <SelectItem value="Djougou → Natitingou">Djougou → Natitingou (5,000 FCFA)</SelectItem>
-                              <SelectItem value="Natitingou → Djougou">Natitingou → Djougou (5,000 FCFA)</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -280,6 +282,35 @@ export default function BookingPage() {
                           </Select>
                         </div>
                       </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <Coffee className="h-5 w-5 text-primary" />
+                        <h3 className="font-semibold text-lg">Choix du petit-déjeuner</h3>
+                        <span className="text-destructive">*</span>
+                      </div>
+                      <RadioGroup
+                        required
+                        value={formData.breakfast}
+                        onValueChange={(value) => setFormData({ ...formData, breakfast: value })}
+                        className="space-y-3"
+                      >
+                        <div className="flex items-start space-x-3 p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                          <RadioGroupItem value="Café au lait avec sandwich" id="breakfast1" className="mt-1" />
+                          <Label htmlFor="breakfast1" className="cursor-pointer flex-1">
+                            <div className="font-medium">Café au lait avec sandwich</div>
+                            <div className="text-sm text-muted-foreground">Café chaud avec du lait et sandwich</div>
+                          </Label>
+                        </div>
+                        <div className="flex items-start space-x-3 p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                          <RadioGroupItem value="Sucrerie avec sandwich" id="breakfast2" className="mt-1" />
+                          <Label htmlFor="breakfast2" className="cursor-pointer flex-1">
+                            <div className="font-medium">Sucrerie avec sandwich</div>
+                            <div className="text-sm text-muted-foreground">Boisson sucrée et sandwich</div>
+                          </Label>
+                        </div>
+                      </RadioGroup>
                     </div>
 
                     <div className="flex items-start gap-3">

@@ -13,42 +13,38 @@ interface LiveLocationTrackerProps {
 export function LiveLocationTracker({ ticketNumber, type }: LiveLocationTrackerProps) {
   const [currentProgress, setCurrentProgress] = useState(0)
 
-  // Mock data - in production, fetch from GPS/database
   const journeyData = {
     passenger: {
       route: "Cotonou → Natitingou",
       departure: "07:00",
-      arrival: "19:00",
+      arrival: "15:30",
       currentLocation: "Djougou",
       progress: 60,
       stops: [
         { name: "Cotonou", time: "07:00", status: "completed", distance: "0 km" },
-        { name: "Bohicon", time: "08:30", status: "completed", distance: "120 km" },
-        { name: "Savè", time: "10:00", status: "completed", distance: "200 km" },
-        { name: "Parakou", time: "12:30", status: "completed", distance: "420 km" },
-        { name: "Djougou", time: "15:00", status: "current", distance: "520 km" },
-        { name: "Natitingou", time: "19:00", status: "pending", distance: "650 km" },
+        { name: "Djougou", time: "12:00", status: "current", distance: "420 km" },
+        { name: "Penessoulou (Aledjo)", time: "14:00", status: "pending", distance: "540 km" },
+        { name: "Natitingou", time: "15:30", status: "pending", distance: "650 km" },
       ],
-      estimatedArrival: "19:15",
+      estimatedArrival: "15:45",
       speed: "85 km/h",
-      nextStop: "Natitingou",
-      distanceRemaining: "130 km",
+      nextStop: "Penessoulou",
+      distanceRemaining: "230 km",
     },
     package: {
       route: "Cotonou → Natitingou",
       departure: "09:30",
-      arrival: "21:00",
-      currentLocation: "Parakou",
+      arrival: "18:00",
+      currentLocation: "Djougou",
       progress: 45,
       stops: [
         { name: "Cotonou - Dépôt", time: "09:30", status: "completed", distance: "0 km" },
-        { name: "Bohicon - Transit", time: "11:00", status: "completed", distance: "120 km" },
-        { name: "Parakou - Centre", time: "14:30", status: "current", distance: "420 km" },
-        { name: "Djougou - Transit", time: "17:00", status: "pending", distance: "520 km" },
-        { name: "Natitingou - Livraison", time: "21:00", status: "pending", distance: "650 km" },
+        { name: "Djougou - Transit", time: "14:30", status: "current", distance: "420 km" },
+        { name: "Penessoulou - Arrêt", time: "16:30", status: "pending", distance: "540 km" },
+        { name: "Natitingou - Livraison", time: "18:00", status: "pending", distance: "650 km" },
       ],
-      estimatedArrival: "21:30",
-      nextStop: "Djougou",
+      estimatedArrival: "18:30",
+      nextStop: "Penessoulou",
       distanceRemaining: "230 km",
     },
   }

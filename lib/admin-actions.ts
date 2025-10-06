@@ -117,3 +117,33 @@ export async function deleteRoute(routeId: string) {
 
   return { success: true, message: "Itinéraire supprimé" }
 }
+
+// Stop Actions
+export async function saveStop(stop: {
+  id?: string
+  route: string
+  stopCity: string
+  order: number
+  arrivalOffset: number
+  departureOffset: number
+  duration: number
+  active?: boolean
+}) {
+  await verifyAdminSession()
+
+  await new Promise((resolve) => setTimeout(resolve, 500))
+
+  return {
+    success: true,
+    message: stop.id ? "Arrêt mis à jour" : "Arrêt créé",
+    stop: { ...stop, id: stop.id || Date.now().toString() },
+  }
+}
+
+export async function deleteStop(stopId: string) {
+  await verifyAdminSession()
+
+  await new Promise((resolve) => setTimeout(resolve, 500))
+
+  return { success: true, message: "Arrêt supprimé" }
+}

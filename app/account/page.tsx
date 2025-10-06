@@ -1,4 +1,3 @@
-import { AlertDescription } from "@/components/ui/alert"
 import { Alert } from "@/components/ui/alert"
 import { redirect } from "next/navigation"
 import { getCurrentBooking, logout } from "@/lib/auth"
@@ -7,7 +6,7 @@ import { Footer } from "@/components/footer"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { LogOut, Ticket, MapPin, Calendar, Clock, User } from "lucide-react"
+import { LogOut, Ticket, MapPin, Calendar, Clock, User, Coffee } from "lucide-react"
 import { QRCodeDisplay } from "@/components/qr-code-display"
 
 export default async function AccountPage() {
@@ -25,6 +24,7 @@ export default async function AccountPage() {
     status: "confirmed",
     departurePoint: "Gare Routière de Cotonou",
     arrivalPoint: "Gare de Natitingou",
+    breakfast: "Café au lait avec sandwich",
     qrCode: booking.ticketNumber,
   }
 
@@ -41,6 +41,7 @@ export default async function AccountPage() {
     date: bookingDetails.date,
     time: bookingDetails.time,
     seat: bookingDetails.seatNumber,
+    breakfast: bookingDetails.breakfast,
   })
 
   return (
@@ -92,6 +93,14 @@ export default async function AccountPage() {
                     <div>
                       <p className="text-sm text-muted-foreground mb-1">Prix</p>
                       <p className="font-bold text-xl">{bookingDetails.price.toLocaleString()} FCFA</p>
+                    </div>
+
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">Petit-déjeuner</p>
+                      <div className="flex items-center gap-2">
+                        <Coffee className="h-4 w-4 text-muted-foreground" />
+                        <p className="font-medium">{bookingDetails.breakfast}</p>
+                      </div>
                     </div>
                   </div>
 
@@ -151,9 +160,10 @@ export default async function AccountPage() {
                   <p className="font-medium">{bookingDetails.arrivalPoint}</p>
                 </div>
                 <Alert>
-                  <AlertDescription className="text-sm">
+                  <h2 className="text-sm">Attention</h2>
+                  <p className="text-sm text-muted-foreground">
                     Veuillez arriver <strong>30 minutes avant</strong> l'heure de départ pour l'enregistrement.
-                  </AlertDescription>
+                  </p>
                 </Alert>
               </CardContent>
             </Card>

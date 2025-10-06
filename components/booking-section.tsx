@@ -13,10 +13,6 @@ import { cn } from "@/lib/utils"
 const routes = [
   { id: "1", from: "Cotonou", to: "Natitingou", price: 15000, duration: "8h30" },
   { id: "2", from: "Natitingou", to: "Cotonou", price: 15000, duration: "8h30" },
-  { id: "3", from: "Aledjo", to: "Natitingou", price: 8000, duration: "4h00" },
-  { id: "4", from: "Natitingou", to: "Aledjo", price: 8000, duration: "4h00" },
-  { id: "5", from: "Djougou", to: "Natitingou", price: 5000, duration: "2h30" },
-  { id: "6", from: "Natitingou", to: "Djougou", price: 5000, duration: "2h30" },
 ]
 
 const departureTimes = ["07:00", "20:00"]

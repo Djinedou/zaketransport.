@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -17,44 +19,57 @@ import {
 } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Plus, Edit, Trash2, Save, MapPin } from "lucide-react"
+import { saveStop, deleteStop } from "@/lib/admin-actions"
+import { toast } from "sonner"
+import { Loader2 } from "lucide-react"
 
 export function StopsManagement() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingStop, setEditingStop] = useState<any>(null)
+  const [isSaving, setIsSaving] = useState(false)
 
-  // Mock data
-  const stops = [
+  const [stops, setStops] = useState([
     {
       id: "1",
       route: "Cotonou → Natitingou",
-      stopCity: "Parakou",
-      order: 1,
-      arrivalOffset: 240,
-      departureOffset: 255,
-      duration: 15,
-      active: true,
-    },
-    {
-      id: "2",
-      route: "Cotonou → Natitingou",
       stopCity: "Djougou",
-      order: 2,
+      order: 1,
       arrivalOffset: 360,
       departureOffset: 375,
       duration: 15,
       active: true,
     },
     {
+      id: "2",
+      route: "Cotonou → Natitingou",
+      stopCity: "Penessoulou",
+      order: 2,
+      arrivalOffset: 380,
+      departureOffset: 395,
+      duration: 15,
+      active: true,
+    },
+    {
       id: "3",
       route: "Natitingou → Cotonou",
-      stopCity: "Djougou",
+      stopCity: "Penessoulou",
       order: 1,
       arrivalOffset: 150,
       departureOffset: 165,
       duration: 15,
       active: true,
     },
-  ]
+    {
+      id: "4",
+      route: "Natitingou → Cotonou",
+      stopCity: "Djougou",
+      order: 2,
+      arrivalOffset: 180,
+      departureOffset: 195,
+      duration: 15,
+      active: true,
+    },
+  ])
 
   const formatTime = (minutes: number) => {
     const hours = Math.floor(minutes / 60)
@@ -70,6 +85,56 @@ export function StopsManagement() {
   const handleNew = () => {
     setEditingStop(null)
     setIsDialogOpen(true)
+  }
+
+  const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setIsSaving(true)
+
+    const formData = new FormData(e.currentTarget)
+    const stopData = {
+      id: editingStop?.id,
+      route: formData.get("route") as string,
+      stopCity: formData.get("city") as string,
+      order: Number(formData.get("order")),
+      arrivalOffset: Number(formData.get("arrival")),
+      departureOffset: Number(formData.get("arrival")) + Number(formData.get("duration")),
+      duration: Number(formData.get("duration")),
+      active: true,
+    }
+
+    try {
+      const result = await saveStop(stopData)
+      if (result.success) {
+        toast.success(result.message)
+
+        if (editingStop) {
+          setStops(stops.map((s) => (s.id === editingStop.id ? { ...stopData, id: s.id } : s)))
+        } else {
+          setStops([...stops, { ...stopData, id: result.stop.id }])
+        }
+
+        setIsDialogOpen(false)
+      }
+    } catch (error) {
+      toast.error("Erreur lors de l'enregistrement")
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleDelete = async (stopId: string) => {
+    if (!confirm("Êtes-vous sûr de vouloir supprimer cet arrêt ?")) return
+
+    try {
+      const result = await deleteStop(stopId)
+      if (result.success) {
+        toast.success(result.message)
+        setStops(stops.filter((s) => s.id !== stopId))
+      }
+    } catch (error) {
+      toast.error("Erreur lors de la suppression")
+    }
   }
 
   return (
@@ -129,7 +194,7 @@ export function StopsManagement() {
                         <Button variant="ghost" size="sm" onClick={() => handleEdit(stop)}>
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" onClick={() => handleDelete(stop.id)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -144,51 +209,79 @@ export function StopsManagement() {
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editingStop ? "Modifier l'arrêt" : "Nouvel arrêt"}</DialogTitle>
-            <DialogDescription>Configurez les détails de l'arrêt intermédiaire</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="route">Itinéraire</Label>
-              <Select defaultValue={editingStop?.route}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner un itinéraire" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Cotonou → Natitingou">Cotonou → Natitingou</SelectItem>
-                  <SelectItem value="Natitingou → Cotonou">Natitingou → Cotonou</SelectItem>
-                  <SelectItem value="Aledjo → Natitingou">Aledjo → Natitingou</SelectItem>
-                  <SelectItem value="Natitingou → Aledjo">Natitingou → Aledjo</SelectItem>
-                </SelectContent>
-              </Select>
+          <form onSubmit={handleSave}>
+            <DialogHeader>
+              <DialogTitle>{editingStop ? "Modifier l'arrêt" : "Nouvel arrêt"}</DialogTitle>
+              <DialogDescription>Configurez les détails de l'arrêt intermédiaire</DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="route">Itinéraire</Label>
+                <Select name="route" defaultValue={editingStop?.route} required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner un itinéraire" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Cotonou → Natitingou">Cotonou → Natitingou</SelectItem>
+                    <SelectItem value="Natitingou → Cotonou">Natitingou → Cotonou</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="city">Ville d'arrêt</Label>
+                <Input
+                  id="city"
+                  name="city"
+                  defaultValue={editingStop?.stopCity}
+                  placeholder="Ex: Penessoulou"
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="order">Ordre de l'arrêt</Label>
+                <Input id="order" name="order" type="number" defaultValue={editingStop?.order || 1} required />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="arrival">Temps d'arrivée (minutes depuis départ)</Label>
+                <Input
+                  id="arrival"
+                  name="arrival"
+                  type="number"
+                  defaultValue={editingStop?.arrivalOffset}
+                  placeholder="Ex: 380"
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="duration">Durée de l'arrêt (minutes)</Label>
+                <Input
+                  id="duration"
+                  name="duration"
+                  type="number"
+                  defaultValue={editingStop?.duration || 15}
+                  required
+                />
+              </div>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="city">Ville d'arrêt</Label>
-              <Input id="city" defaultValue={editingStop?.stopCity} placeholder="Ex: Parakou" />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="order">Ordre de l'arrêt</Label>
-              <Input id="order" type="number" defaultValue={editingStop?.order || 1} />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="arrival">Temps d'arrivée (minutes depuis départ)</Label>
-              <Input id="arrival" type="number" defaultValue={editingStop?.arrivalOffset} placeholder="Ex: 240" />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="duration">Durée de l'arrêt (minutes)</Label>
-              <Input id="duration" type="number" defaultValue={editingStop?.duration || 15} />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-              Annuler
-            </Button>
-            <Button onClick={() => setIsDialogOpen(false)}>
-              <Save className="h-4 w-4 mr-2" />
-              Enregistrer
-            </Button>
-          </DialogFooter>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isSaving}>
+                Annuler
+              </Button>
+              <Button type="submit" disabled={isSaving}>
+                {isSaving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Enregistrement...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Enregistrer
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

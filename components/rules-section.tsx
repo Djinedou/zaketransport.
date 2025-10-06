@@ -75,9 +75,10 @@ export function RulesSection() {
               </AccordionTrigger>
               <AccordionContent className="text-base leading-relaxed space-y-3 pt-4">
                 <p className="text-muted-foreground">
-                  Pour les passagers en provenance ou à destination d'Aledjo, nous offrons un service de transport
-                  gratuit depuis/vers le centre-ville jusqu'à la gare routière. Veuillez nous contacter lors de votre
-                  réservation pour bénéficier de ce service.
+                  Pour les passagers en provenance ou à destination d'Aledjo, Partogo, Akaredè, Tchimberi et environs,
+                  nos bus s'arrêtent à Penessoulou. Vous pouvez réserver votre billet auprès de notre agence d'Aledjo au
+                  01 97 76 52 07 ou au 01 61 04 08 24. Pour le bus de 7h, les colis doivent être déposés à l'agence
+                  d'Aledjo au plus tard à 20h la veille.
                 </p>
               </AccordionContent>
             </AccordionItem>
